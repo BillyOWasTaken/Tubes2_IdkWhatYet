@@ -1,0 +1,13 @@
+{
+  "name": "backend",
+  "extends": "../../tsconfig.json",
+  "compilerOptions": {
+    "lib": ["ESNext"],
+    "types": ["bun"],
+    "jsx": "preserve"
+  },
+  "scripts": {
+    "dev": "bun run src/index.ts"
+},
+  "include": ["src"]
+}
