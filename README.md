@@ -13,3 +13,11 @@ Membuat aplikasi traversal pohon HTML (DOM Tree) yang menggunakan algoritma Brea
     <li>[OUTPUT] Waktu pencarian.</li>
     <li>[OUTPUT] Traversal log yang memiliki info tahapan penelusuran.</li>
 </ul>
+
+
+<h2>Beberapa penjelasan struktur folder di Backend.</h2>
+<ul>
+    <li> Core : entity </li>
+    <li> Data :  </li>
+    <li> Core : entity </li>
+</ul>
