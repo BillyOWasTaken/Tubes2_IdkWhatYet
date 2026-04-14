@@ -3,7 +3,7 @@
 <h2> Deskripsi </h2>
 Membuat aplikasi traversal pohon HTML (DOM Tree) yang menggunakan algoritma Breadth First Search (BFS) dan Depth First Search (DFS) untuk melakukan pencarian elemen berdasarkan CSS selector pada struktur DOM.
 
-<h2> To Do List </h2>
+<h2> SRS Sementara </h2>
 <ul> 
     <li> Aplikasi mesti melakukan scrapping dari URL.
     Input: URL website/ masukin test, pemilihan BFS/DFS, CSS selector； Output: top n kemunculan</li>
@@ -11,5 +11,5 @@ Membuat aplikasi traversal pohon HTML (DOM Tree) yang menggunakan algoritma Brea
     <li>[OUTPUT] Aplikasi dapat menampilkan visualisasi struktur DOM dengan maksimum kedalaman tree.</li>
     <li>[OUTPUT] Menampilkan highlight pada jalur yang ditraversal, menandakan elemen yang terpengaruh.</li>
     <li>[OUTPUT] Waktu pencarian.</li>
-    <li>[OUTPUT] </li>
+    <li>[OUTPUT] Traversal log yang memiliki info tahapan penelusuran.</li>
 </ul>
