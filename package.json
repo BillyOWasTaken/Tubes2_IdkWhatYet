@@ -4,7 +4,7 @@
   "type": "module",
   "workspaces": ["src/*"],
   "scripts": {
-    "dev": "bun run --parallel \"cd apps/backend && bun run dev\" \"cd apps/frontend && bun run dev\""
+	"dev": "bun run --parallel --filter frontend --filter backend dev"
   },
   "devDependencies": {
     "@types/bun": "latest",
