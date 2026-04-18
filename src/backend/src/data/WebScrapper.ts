@@ -1,6 +1,15 @@
 import axios from "axios";
 import { ScraperError } from "../core/ErrorHandling";
 
+
+/**
+ * response.data berisi:
+ * status: int
+ * statusText: string
+ * headers: []
+ * data: string (HTML)
+ * request
+ */
 export class WebScraper {
     async scrap(url: string): Promise<string> {
         try {
