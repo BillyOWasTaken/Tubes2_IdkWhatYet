@@ -1,0 +1,12 @@
+// Struktur ilegal di <ul> tag
+
+ <html>
+        <body>
+            <div class="box">
+                <p id="text"></p>
+            </div>
+            <div></div>
+        </body>
+        <br>
+        <p> Hello World <ul> </ul> </p>
+    </html>
