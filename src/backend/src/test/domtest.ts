@@ -4,9 +4,6 @@ import fs, { readFileSync } from "fs";
 
 async function main() 
 {
-    //  TODO: fix testing format for loadFromUrl to avoid
-    //  "error: Expected "," but found end of file"
-    //  suspected incorrect input format
     
     // TODO: add testing for Tree visualization
 
