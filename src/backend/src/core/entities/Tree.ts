@@ -1,3 +1,5 @@
+import { InvalidTreeError } from "../ErrorHandling";
+
 export class Tree{
     root: Node | null;
     maxDepth: number = 0;
@@ -34,6 +36,31 @@ export class Tree{
         };
 
         traverse(this.root, "");
+    }
+
+    validate(): void {
+        // Apakah root kosong
+        if (!this.root) {
+            throw new InvalidTreeError("[TREE] Tree kosong");
+        }
+        
+        // Apakah ada tag html
+        if (this.root.tag !== "html") {
+            throw new InvalidTreeError("[TREE] Root harus <html>");
+        }
+        
+        /// Apakah ada body
+        const body = this.root.children.find(c => c.tag === "body");
+
+        if (!body) {
+            throw new InvalidTreeError("[TREE] <body> tidak ditemukan");
+        }
+        
+        for (const child of this.root.children) {
+            if (child.tag !== "head" && child.tag !== "body") {
+                throw new InvalidTreeError("[TREE] Invalid tag di <html>");
+            }
+        }
     }
 }
 
