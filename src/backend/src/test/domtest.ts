@@ -4,6 +4,12 @@ import fs, { readFileSync } from "fs";
 
 async function main() 
 {
+    //  TODO: fix testing format for loadFromUrl to avoid
+    //  "error: Expected "," but found end of file"
+    //  suspected incorrect input format
+    
+    // TODO: add testing for Tree visualization
+
     let dom: DOMParser;
     dom = new DOMParser();
     const filePath = path.join(__dirname, "test1.txt");
@@ -15,13 +21,21 @@ async function main()
         await dom.loadFromString(htmlContent);
 
         console.log("Querying Div: ")
+        //html, body, br, p
         const divs = dom.query("div", "BFS");
+        const htmls = dom.query("html", "BFS");
+        const bodies = dom.query("body", "BFS");
+        const breaks = dom.query("br", "BFS");
+        const ps = dom.query("p", "BFS");
+        const uls = dom.query("ul", "BFS");
 
         console.log("Found", divs.length, "divs")
+        console.log("Found", htmls.length, "htmls")
+        console.log("Found", bodies.length, "bodies")
+        console.log("Found", breaks.length, "breaks")
+        console.log("Found", ps.length, "ps")
+        console.log("Found", uls.length, "uls")
 
-        if (divs.length > 0){
-            console.log("First div ID: ", divs[0]?.id);
-        } 
     }
     catch (error: any)
     {
@@ -31,16 +45,13 @@ async function main()
     try 
     {
         console.log("Page 2");
-        await dom.loadFromUrl("https://guthib.com/");
+        await dom.loadFromUrl("https://itb.ac.id/");
 
         console.log("Querying Div: ")
         const divs = dom.query("div", "DFS");
 
         console.log("Found", divs.length, "divs")
 
-        if (divs.length > 0){
-            console.log("First div ID: ", divs[0]?.id);
-        } 
     }
     catch (error: any)
     {
