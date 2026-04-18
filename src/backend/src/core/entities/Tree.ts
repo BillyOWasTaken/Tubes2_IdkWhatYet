@@ -132,11 +132,12 @@ export class Node {
         // filter function bisa dilihat penggunaannya pada GeekforGeeks
     }  
     
-    hasAncestor(tag: string): boolean {
+    // UPDATE: jadi bisa buat class dan id
+    hasAncestor(predicate: (node: Node) => boolean): boolean {
         let current = this.parent;
         
         while (current) {
-            if (current.tag == tag) return true;
+            if (predicate(current)) return true;
             current = current.parent;
         }
         return false;
