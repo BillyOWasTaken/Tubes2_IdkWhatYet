@@ -1,3 +1,14 @@
+// NOTE: Bisa dilihat referensi di W3Schools, idk why I implement this
+
+/**
+ * Yang sudah diimplementasi:
+ * ScraperError
+ * ParserError
+ * SelectorError
+ * TraversalError
+ * InvalidTreeError
+ */
+
 export class ScraperError extends Error {
     statusCode?: number;
 
@@ -30,5 +41,13 @@ export class TraversalError extends Error {
         super(message);
         this.name = "TraversalError";
         Object.setPrototypeOf(this, TraversalError.prototype);
+    }
+}
+
+export class InvalidTreeError extends Error {
+    constructor(message: string) {
+        super(message);
+        this.name = "InvalidTreeError";
+        Object.setPrototypeOf(this, InvalidTreeError.prototype);
     }
 }
