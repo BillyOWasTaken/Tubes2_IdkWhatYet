@@ -18,6 +18,6 @@ Membuat aplikasi traversal pohon HTML (DOM Tree) yang menggunakan algoritma Brea
 <h2>Beberapa penjelasan struktur folder di Backend.</h2>
 <ul>
     <li> Core : entity </li>
-    <li> Data :  </li>
-    <li> Core : entity </li>
+    <li> Data : logic </li>
+    <li> Presentation : handle API (input/output) </li>
 </ul>
