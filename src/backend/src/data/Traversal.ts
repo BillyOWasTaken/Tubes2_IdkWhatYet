@@ -6,6 +6,7 @@ import { CSSSelector } from "./CSSSelector";
  * TO DO:
  * Lowest Common Ancestor
  * added dls, just a dfs with limit and tracking for current depth for now
+ * added minDepth with default at zero, limit as maxDepth 
  */
 
 export class Traversal {
@@ -42,20 +43,19 @@ export class Traversal {
         return result;
     }
 
-    dls(node: Node, query: string, result: Node[] = [], limit: number, currentDepth: number = 0): Node[] {
-        if (this.selector.matchQuery(node, query)) {
+    dls(node: Node, query: string, maxDepth: number, minDepth: number = 0, currentDepth: number = 0, result: Node[] = []): Node[] {
+        if (currentDepth >= minDepth && this.selector.matchQuery(node, query)) {
             result.push(node);
         }
         
-        if (currentDepth >= limit){
+        if (currentDepth >= maxDepth){
             return result;
         }
 
         for (const child of node.children) {
-            this.dls(child, query, result, limit, currentDepth+1);
+            this.dls(child, query, maxDepth, minDepth, currentDepth+1, result);
         }
         
         return result;
     }
-
 }
