@@ -22,7 +22,7 @@ export class DOMParser {
         return this.loadFromString(html)
     }
 
-    query(selector: string, method: "BFS" | "DFS" = "BFS"): Node[] 
+    query(selector: string, method: "DLS" | "BFS" | "DFS" = "BFS", minDepth: number = 0, maxDepth: number = 0): Node[] 
     {
         if (!this.currentTree || !this.currentTree.root){
             throw new ParserError("[DOMParser] Tree kosong atau belum loaded. Bila belum loaded, load String atau URL terlebih dahulu.")
@@ -31,9 +31,14 @@ export class DOMParser {
         {
             return this.traversal.bfs(this.currentTree.root, selector);
         }
-        else
+        else if (method = "DFS")
         {
             return this.traversal.dfs(this.currentTree.root, selector);
+        }
+        
+        else
+        {
+            return this.traversal.dls(this.currentTree.root, selector, maxDepth, minDepth);
         }
         
     }
