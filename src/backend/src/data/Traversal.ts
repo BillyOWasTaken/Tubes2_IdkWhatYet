@@ -5,8 +5,9 @@ import { CSSSelector } from "./CSSSelector";
 /**
  * TO DO:
  * Lowest Common Ancestor
- * Belum bisa ngasih top n kemunculan, not sure harus DLS or no
+ * added dls, just a dfs with limit and tracking for current depth for now
  */
+
 export class Traversal {
     private selector = new CSSSelector();  
 
@@ -40,4 +41,21 @@ export class Traversal {
 
         return result;
     }
+
+    dls(node: Node, query: string, result: Node[] = [], limit: number, currentDepth: number = 0): Node[] {
+        if (this.selector.matchQuery(node, query)) {
+            result.push(node);
+        }
+        
+        if (currentDepth >= limit){
+            return result;
+        }
+
+        for (const child of node.children) {
+            this.dls(child, query, result, limit, currentDepth+1);
+        }
+        
+        return result;
+    }
+
 }
