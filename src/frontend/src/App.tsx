@@ -1,121 +1,190 @@
-import { useState } from 'react'
-import reactLogo from './assets/react.svg'
-import viteLogo from './assets/vite.svg'
-import heroImg from './assets/hero.png'
-import './App.css'
+import { useState } from "react";
+import { Traversal } from "../../backend/src/data/Traversal";
+import { Node } from "../../backend/src/core/entities/Tree";
+import { TreeView, highlight, markMatch, highlightEdge } from "./TreeView";
+import * as d3 from "d3";
 
-function App() {
-  const [count, setCount] = useState(0)
+type VisualNode = {
+  name: string;
+  attributes?: Record<string, string>;
+  children?: VisualNode[];
+};
 
-  return (
-    <>
-      <section id="center">
-        <div className="hero">
-          <img src={heroImg} className="base" width="170" height="179" alt="" />
-          <img src={reactLogo} className="framework" alt="React logo" />
-          <img src={viteLogo} className="vite" alt="Vite logo" />
-        </div>
-        <div>
-          <h1>Get started</h1>
-          <p>
-            Edit <code>src/App.tsx</code> and save to test <code>HMR</code>
-          </p>
-        </div>
-        <button
-          className="counter"
-          onClick={() => setCount((count) => count + 1)}
-        >
-          Count is {count}
-        </button>
-      </section>
+function toNode(v: VisualNode, parent: Node | null = null): Node {
+  const node = new Node(v.name, v.attributes || {}, parent);
 
-      <div className="ticks"></div>
+  if (v.children) {
+    for (const child of v.children) {
+      node.addChild(toNode(child, node));
+    }
+  }
 
-      <section id="next-steps">
-        <div id="docs">
-          <svg className="icon" role="presentation" aria-hidden="true">
-            <use href="/icons.svg#documentation-icon"></use>
-          </svg>
-          <h2>Documentation</h2>
-          <p>Your questions, answered</p>
-          <ul>
-            <li>
-              <a href="https://vite.dev/" target="_blank">
-                <img className="logo" src={viteLogo} alt="" />
-                Explore Vite
-              </a>
-            </li>
-            <li>
-              <a href="https://react.dev/" target="_blank">
-                <img className="button-icon" src={reactLogo} alt="" />
-                Learn more
-              </a>
-            </li>
-          </ul>
-        </div>
-        <div id="social">
-          <svg className="icon" role="presentation" aria-hidden="true">
-            <use href="/icons.svg#social-icon"></use>
-          </svg>
-          <h2>Connect with us</h2>
-          <p>Join the Vite community</p>
-          <ul>
-            <li>
-              <a href="https://github.com/vitejs/vite" target="_blank">
-                <svg
-                  className="button-icon"
-                  role="presentation"
-                  aria-hidden="true"
-                >
-                  <use href="/icons.svg#github-icon"></use>
-                </svg>
-                GitHub
-              </a>
-            </li>
-            <li>
-              <a href="https://chat.vite.dev/" target="_blank">
-                <svg
-                  className="button-icon"
-                  role="presentation"
-                  aria-hidden="true"
-                >
-                  <use href="/icons.svg#discord-icon"></use>
-                </svg>
-                Discord
-              </a>
-            </li>
-            <li>
-              <a href="https://x.com/vite_js" target="_blank">
-                <svg
-                  className="button-icon"
-                  role="presentation"
-                  aria-hidden="true"
-                >
-                  <use href="/icons.svg#x-icon"></use>
-                </svg>
-                X.com
-              </a>
-            </li>
-            <li>
-              <a href="https://bsky.app/profile/vite.dev" target="_blank">
-                <svg
-                  className="button-icon"
-                  role="presentation"
-                  aria-hidden="true"
-                >
-                  <use href="/icons.svg#bluesky-icon"></use>
-                </svg>
-                Bluesky
-              </a>
-            </li>
-          </ul>
-        </div>
-      </section>
-
-      <div className="ticks"></div>
-      <section id="spacer"></section>
-    </>
-  )
+  return node;
 }
 
-export default App
+export default function App() {
+  const [html, setHtml] = useState("");
+
+  const [urlInput, setUrlInput] = useState("");
+  const [inputMode, setInputMode] = useState<"html" | "url">("html"); 
+  const [rootNode, setRootNode] = useState<Node | null>(null);
+
+  const [query, setQuery] = useState("");
+  const [mode, setMode] = useState<"dfs" | "bfs" | "dls">("dfs");
+
+  const [log, setLog] = useState<string[]>([]);
+  const [visitedCount, setVisitedCount] = useState(0);
+  const [time, setTime] = useState(0);
+
+  const traversal = new Traversal();
+
+async function handleParse() {
+
+    const endpoint =
+      inputMode === "html"
+        ? "http://localhost:3000/api/parse"
+        : "http://localhost:3000/api/url";
+
+    const body =
+      inputMode === "html"
+        ? { html }
+        : { url: urlInput };
+
+    const res = await fetch(endpoint, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(body),
+    });
+
+    const data = await res.json();
+
+    if (data.error) throw new Error(data.error);
+
+    const root = toNode(data.tree);
+    setRootNode(root);
+
+}
+
+  const resetColors = (node: Node) => {
+    if (node.el) {
+      d3.select(node.el).attr("fill", "steelblue");
+    }
+    if (node.edgeEl) {
+      d3.select(node.edgeEl)
+        .attr("stroke", "#555")
+        .attr("stroke-width", 1.5);
+    }
+    node.children.forEach(resetColors);
+  };
+
+  const handleRun = async () => {
+    if (!rootNode) return;
+
+    resetColors(rootNode);
+
+    let count = 0;
+    const logs: string[] = [];
+    const start = performance.now();
+
+    const onVisit = (node: Node) => {
+      count++;
+      logs.push(`Visited: <${node.tag}>`);
+      highlight(node);
+      highlightEdge(node);
+    };
+
+    const onMatch = (node: Node) => {
+      logs.push(`Match: <${node.tag}>`);
+      markMatch(node);
+    };
+
+    if (mode === "dfs") {
+      await traversal.dfsAnimated(rootNode, query, 150, onVisit, onMatch);
+    } else if (mode === "bfs") {
+      await traversal.bfsAnimated(rootNode, query, 150, onVisit, onMatch);
+    } else {
+      await traversal.dlsAnimated(rootNode, query, 3, 0, 0, 150, onVisit, onMatch);
+    }
+
+    const end = performance.now();
+
+    setVisitedCount(count);
+    setLog(logs);
+    setTime(end - start);
+  };
+
+  return (
+    <div style={{ padding: 20, background: "#ffffff", color: "black" }}>
+      <h1>DOM Traversal Visualizer</h1>
+
+        <div style={{ marginTop: 10 }}>
+        <label>
+          <input
+            type="radio"
+            value="html"
+            checked={inputMode === "html"}
+            onChange={() => setInputMode("html")}
+          />
+          HTML
+        </label>
+
+        <label style={{ marginLeft: 10 }}>
+          <input
+            type="radio"
+            value="url"
+            checked={inputMode === "url"}
+            onChange={() => setInputMode("url")}
+          />
+          URL
+        </label>
+      </div>
+        {inputMode === "html" ? (
+          <textarea
+            value={html}
+            onChange={(e) => setHtml(e.target.value)}
+            rows={6}
+            cols={80}
+            placeholder="Paste HTML here..."
+          />
+        ) : (
+          <input
+            value={urlInput}
+            onChange={(e) => setUrlInput(e.target.value)}
+            placeholder="Enter URL..."
+            style={{ width: "400px" }}
+          />
+        )}
+        <button type="submit" disabled={inputMode === "html" ? !html.trim() : !urlInput.trim()} onClick={handleParse} style={{ marginLeft: 10 }}>
+            Parse
+          </button>
+
+      <div style={{ marginTop: 10 }}>
+        <input
+          value={query}
+          onChange={(e) => setQuery(e.target.value)}
+          placeholder="CSS selector"
+        />
+
+        <select value={mode} onChange={(e) => setMode(e.target.value as any)}>
+          <option value="dfs">DFS</option>
+          <option value="bfs">BFS</option>
+          <option value="dls">DLS</option>
+        </select>
+
+        <button onClick={handleRun}>Run</button>
+      </div>
+
+      {rootNode && <TreeView root={rootNode} />}
+
+      <div>
+        Time: {time.toFixed(2)} ms | Visited: {visitedCount} nodes
+      </div>
+
+      <div style={{ maxHeight: 200, overflow: "auto" }}>
+        {log.map((l, i) => (
+          <div key={i}>{l}</div>
+        ))}
+      </div>
+    </div>
+  );
+}

@@ -77,6 +77,9 @@ export class Node {
     children: Node[] = [];
     depth:  number = 0;
     
+    el?: SVGCircleElement;
+    edgeEl?: SVGLineElement;
+
     //Konstruktor untuk membuat node baru dengan array kosong sebagai anaknya
     constructor(tag: string, attributes: Record<string, string> = {}, parent: Node | null = null) {
         this.tag = tag;
