@@ -6,7 +6,19 @@ export class Tree{
 
     constructor(root: Node) {
         this.root = root;
-        this.maxDepth = root.depth;
+        this.maxDepth = this.calculateMaxDepth(root);
+
+    }
+
+    private calculateMaxDepth(node: Node, currentDepth: number = 0): number {
+        let maxDepth = currentDepth;
+
+        for (const child of node.children){
+            const childMaxDepth = this.calculateMaxDepth(child, currentDepth + 1);
+            maxDepth = Math.max(maxDepth, childMaxDepth);
+        }
+
+        return maxDepth;
     }
 
     updateMaxDepth(depth: number): void {
