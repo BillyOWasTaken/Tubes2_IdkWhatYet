@@ -112,9 +112,9 @@ async dlsAnimated(node: Node, query: string, maxDepth: number, minDepth: number,
         //max log value (ceil(log2(maxDepth))+1)
         const maxPossibleNodes = maxNodes || this.calculateTreeSize(root);
         this.logBL = Math.floor(Math.log2(maxPossibleNodes)) + 2;
-
+        
         //dfs untuk mengisi immediate parent
-        this.dfsBinaryLifting
+        this.dfsBinaryLifting(root, null, 0); // This fucker right here
 
         // binary lifting table diisi
         for (let k = 1; k = this.logBL; k++){
