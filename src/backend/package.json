@@ -1,23 +1,11 @@
 {
   "name": "backend",
-  "extends": "../../tsconfig.json",
-  "compilerOptions": {
-    "lib": [
-      "ESNext"
-    ],
-    "types": [
-      "bun"
-    ],
-    "jsx": "preserve"
-  },
+  "version": "1.0.0",
   "scripts": {
-    "dev": "bun run src/index.ts"
+    "dev": "bun run index.ts"
   },
-  "include": [
-    "src"
-  ],
   "dependencies": {
-    "htmlparser2": "^12.0.0",
-    "tsx": "^4.21.0"
+    "axios": "^1.15.2",
+    "htmlparser2": "^12.0.0"
   }
 }

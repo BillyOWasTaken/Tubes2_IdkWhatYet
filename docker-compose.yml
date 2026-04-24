@@ -1,22 +1,18 @@
-version: "3.9"
-
 services:
-  backend:
-    build:
-      context: .
-      target: backend
-    ports:
-      - "3000:3000"
-    volumes:
-      - .:/app
-    working_dir: /app/apps/backend
-
   frontend:
     build:
       context: .
       target: frontend
     ports:
       - "5173:5173"
-    volumes:
-      - .:/app
-    working_dir: /app/apps/frontend
+    working_dir: /app/src/frontend
+    command: bun run dev
+
+  backend:
+    build:
+      context: .
+      target: backend
+    ports:
+      - "3000:3000"
+    working_dir: /app/src/backend
+    command: bun run index.ts
