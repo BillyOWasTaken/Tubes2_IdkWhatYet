@@ -37,9 +37,11 @@ serve({
       try {
         const { html } = await req.json();
         const tree = parser.loadFromString(html);
+         const maxDepth = tree.maxDepth;
         const visual = toVisualNode(tree.root);
+       
 
-        return new Response(JSON.stringify({ tree: visual }), {
+        return new Response(JSON.stringify({ tree: visual, maxDepth: maxDepth }), {
           headers: { ...corsHeaders, "Content-Type": "application/json" },
         });
       } catch (e) {
@@ -59,8 +61,9 @@ serve({
 
             const tree = await parser.loadFromUrl(targetUrl);
             const visual = toVisualNode(tree.root);
+           
 
-            return new Response(JSON.stringify({ tree: visual }), {
+            return new Response(JSON.stringify({ tree: visual, maxDepth: maxDepth}), {
             headers: { ...corsHeaders, "Content-Type": "application/json" },
             });
 

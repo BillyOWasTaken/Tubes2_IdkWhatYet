@@ -22,19 +22,20 @@ function toNode(v: VisualNode, parent: Node | null = null): Node {
   return node;
 }
 
+
 export default function App() {
   const [html, setHtml] = useState("");
-
   const [urlInput, setUrlInput] = useState("");
   const [inputMode, setInputMode] = useState<"html" | "url">("html"); 
   const [rootNode, setRootNode] = useState<Node | null>(null);
-
   const [query, setQuery] = useState("");
   const [mode, setMode] = useState<"dfs" | "bfs" | "dls">("dfs");
-
   const [log, setLog] = useState<string[]>([]);
   const [visitedCount, setVisitedCount] = useState(0);
   const [time, setTime] = useState(0);
+  const [matchMode, setMatchMode] = useState<"all" | "topn">("all");
+  const [topN, setTopN] = useState(5);
+  const [maxDepth, setMaxDepth] = useState<number | null>(null);
 
   const traversal = new Traversal();
 
@@ -58,10 +59,13 @@ async function handleParse() {
 
     const data = await res.json();
 
+
     if (data.error) throw new Error(data.error);
 
     const root = toNode(data.tree);
     setRootNode(root);
+    setMaxDepth(data.maxDepth);
+    console.log("Parsed tree with max depth:", data.maxDepth);
 
 }
 
@@ -85,6 +89,7 @@ async function handleParse() {
     let count = 0;
     const logs: string[] = [];
     const start = performance.now();
+    let matchCount = 0;
 
     const onVisit = (node: Node) => {
       count++;
@@ -95,7 +100,10 @@ async function handleParse() {
 
     const onMatch = (node: Node) => {
       logs.push(`Match: <${node.tag}>`);
-      markMatch(node);
+      if (matchMode === "all" || (matchMode === "topn" && matchCount < topN)) {
+        markMatch(node);
+        matchCount++;
+      }
     };
 
     if (mode === "dfs") {
@@ -103,7 +111,7 @@ async function handleParse() {
     } else if (mode === "bfs") {
       await traversal.bfsAnimated(rootNode, query, 150, onVisit, onMatch);
     } else {
-      await traversal.dlsAnimated(rootNode, query, 3, 0, 0, 150, onVisit, onMatch);
+      await traversal.dlsAnimated(rootNode, query, topN, 0, 0, 150, onVisit, onMatch);
     }
 
     const end = performance.now();
@@ -154,11 +162,12 @@ async function handleParse() {
             style={{ width: "400px" }}
           />
         )}
-        <button type="submit" disabled={inputMode === "html" ? !html.trim() : !urlInput.trim()} onClick={handleParse} style={{ marginLeft: 10 }}>
+        <button disabled={inputMode === "html" ? !html.trim() : !urlInput.trim()} onClick={handleParse} style={{ marginLeft: 10 }}>
             Parse
           </button>
 
-      <div style={{ marginTop: 10 }}>
+
+      <div style={{ marginTop: 10, display: "flex", alignItems: "center", gap: 12, flexWrap: "wrap", justifyContent: "center"}}>
         <input
           value={query}
           onChange={(e) => setQuery(e.target.value)}
@@ -171,10 +180,58 @@ async function handleParse() {
           <option value="dls">DLS</option>
         </select>
 
+        <span>
+          <label>
+            <input
+              type="radio"
+              value="all"
+              checked={matchMode === "all"}
+              onChange={() => setMatchMode("all")}
+            />
+            All matches
+          </label>
+          <label style={{ marginLeft: 8 }}>
+            <input
+              type="radio"
+              value="topn"
+              checked={matchMode === "topn"}
+              onChange={() => setMatchMode("topn")}
+            />
+            Top
+            <input
+              type="number"
+              min={1}
+              value={topN}
+              onChange={e => setTopN(Number(e.target.value))}
+              style={{ width: 50, marginLeft: 4 }}
+              disabled={matchMode !== "topn"}
+            />
+          </label>
+        </span>
+
         <button onClick={handleRun}>Run</button>
       </div>
 
-      {rootNode && <TreeView root={rootNode} />}
+
+      {rootNode && (
+        <>
+          <div style={{ margin: "10px 0 4px 0", fontWeight: 500 }}>
+            Max tree depth: {maxDepth ?? "-"}
+          </div>
+          <div 
+            style={{ 
+              overflow: "auto", 
+              maxWidth: "100%", 
+              maxHeight: "70vh",
+              border: "1px solid #ddd",
+              borderRadius: "4px",
+              background: "#fafafa"
+            }}
+          >
+            <TreeView root={rootNode} />
+          </div>
+        </>
+      )}
 
       <div>
         Time: {time.toFixed(2)} ms | Visited: {visitedCount} nodes
