@@ -114,13 +114,13 @@ async dlsAnimated(node: Node, query: string, maxDepth: number, minDepth: number,
         this.logBL = Math.floor(Math.log2(maxPossibleNodes)) + 2;
         
         //dfs untuk mengisi immediate parent
-        this.dfsBinaryLifting(root, null, 0); // This fucker right here
+        this.dfsBinaryLifting(root, null, 0); 
 
         // binary lifting table diisi
-        for (let k = 1; k = this.logBL; k++){
+        for (let k = 1; k <= this.logBL; k++){
             for (const [node, ancestors] of this.up){
                 const midAncestor = ancestors.get(k - 1);
-                if (midAncestor && this.up.get(midAncestor)){
+                if (midAncestor && this.up.has(midAncestor)){
                     const ancestorValue = this.up.get(midAncestor)?.get(k-1) || null;
                     ancestors.set(k, ancestorValue);
                 } else {
@@ -146,10 +146,11 @@ async dlsAnimated(node: Node, query: string, maxDepth: number, minDepth: number,
     private kthAncestor(node: Node, k: number): Node | null {
         let current: Node | null = node;
 
-        for (let i = 0; i < this.logBL; i++){
+        for (let i = 0; i <= this.logBL; i++){
             if (k & (1 << i)) {
                 if (!current) return null;
                 current = this.getAncestor(current, i);
+                if (!current) return null;
             }
         }
         return current;
