@@ -1,27 +1,41 @@
-import { useState } from "react";
+import { useState, useRef } from "react"; // Add useRef import
 import { Traversal } from "../../backend/src/data/Traversal";
 import { Node } from "../../backend/src/core/entities/Tree";
 import { TreeView, highlight, markMatch, highlightEdge } from "./TreeView";
 import * as d3 from "d3";
 
+let nextNodeId = 1;
+
 type VisualNode = {
   name: string;
+  id?: string;
   attributes?: Record<string, string>;
   children?: VisualNode[];
 };
 
 function toNode(v: VisualNode, parent: Node | null = null): Node {
   const node = new Node(v.name, v.attributes || {}, parent);
-
+  (node as any).uniqueId = `node_${nextNodeId++}`;
+  (node as any).originalTag = v.name;
+  
   if (v.children) {
     for (const child of v.children) {
       node.addChild(toNode(child, node));
     }
   }
-
   return node;
 }
 
+function findNodeByUniqueId(root: Node | null, uniqueId: string): Node | null {
+  if (!root) return null;
+  if ((root as any).uniqueId === uniqueId) return root;
+  
+  for (const child of root.children) {
+    const found = findNodeByUniqueId(child, uniqueId);
+    if (found) return found;
+  }
+  return null;
+}
 
 export default function App() {
   const [html, setHtml] = useState("");
@@ -36,20 +50,23 @@ export default function App() {
   const [matchMode, setMatchMode] = useState<"all" | "topn">("all");
   const [topN, setTopN] = useState(5);
   const [maxDepth, setMaxDepth] = useState<number | null>(null);
+  
+  // LCA states
+  const [lcaMode, setLcaMode] = useState(false);
+  const [selectedNodes, setSelectedNodes] = useState<Node[]>([]);
+  const [lcaResult, setLcaResult] = useState<Node | null>(null);
 
-  const traversal = new Traversal();
+  // IMPORTANT: Use useRef to persist the same traversal instance
+  const traversalRef = useRef(new Traversal());
 
-async function handleParse() {
+  async function handleParse() {
+    nextNodeId = 1;
+    
+    const endpoint = inputMode === "html"
+      ? "http://localhost:3000/api/parse"
+      : "http://localhost:3000/api/url";
 
-    const endpoint =
-      inputMode === "html"
-        ? "http://localhost:3000/api/parse"
-        : "http://localhost:3000/api/url";
-
-    const body =
-      inputMode === "html"
-        ? { html }
-        : { url: urlInput };
+    const body = inputMode === "html" ? { html } : { url: urlInput };
 
     const res = await fetch(endpoint, {
       method: "POST",
@@ -58,16 +75,26 @@ async function handleParse() {
     });
 
     const data = await res.json();
-
-
     if (data.error) throw new Error(data.error);
 
     const root = toNode(data.tree);
     setRootNode(root);
     setMaxDepth(data.maxDepth);
-    console.log("Parsed tree with max depth:", data.maxDepth);
-
-}
+    
+    // Use the same traversal instance
+    if (root) {
+      console.log("Starting preprocessing with traversal instance:", traversalRef.current);
+      traversalRef.current.preprocess(root, data.maxDepth);
+      
+      // Verify depth map was populated
+      const testDepth = traversalRef.current.getNodeDepth(root);
+      console.log("Root depth after preprocessing:", testDepth);
+      console.log("Root uniqueId:", (root as any).uniqueId);
+      
+      // Log all depth map keys
+      console.log("Depth map after preprocessing:", (traversalRef.current as any).depth);
+    }
+  }
 
   const resetColors = (node: Node) => {
     if (node.el) {
@@ -79,6 +106,82 @@ async function handleParse() {
         .attr("stroke-width", 1.5);
     }
     node.children.forEach(resetColors);
+  };
+
+  const handleNodeClick = (clickedNode: Node) => {
+    if (!lcaMode) return;
+    
+    console.log("Using traversal instance:", traversalRef.current);
+    
+    // Find the actual node in the tree
+    const actualNode = findNodeByUniqueId(rootNode, (clickedNode as any).uniqueId);
+    if (!actualNode) {
+      console.error("Could not find node in tree");
+      return;
+    }
+    
+    const nodeDepth = traversalRef.current.getNodeDepth(actualNode);
+    console.log(`Clicked node: ${actualNode.tag}, Depth: ${nodeDepth}, UniqueId: ${(actualNode as any).uniqueId}`);
+    
+    if (selectedNodes.length < 2 && !selectedNodes.includes(actualNode)) {
+      const newSelected = [...selectedNodes, actualNode];
+      setSelectedNodes(newSelected);
+      
+      if (actualNode.el) {
+        d3.select(actualNode.el)
+          .attr("fill", "yellow")
+          .attr("stroke", "orange")
+          .attr("stroke-width", 3);
+      }
+      
+      if (newSelected.length === 2) {
+        console.log("Finding LCA for:", newSelected[0].tag, newSelected[1].tag);
+        
+        // Use the same traversal instance
+        const lca = traversalRef.current.findLCA(newSelected[0], newSelected[1]);
+        console.log("LCA result:", lca?.tag);
+        
+        setLcaResult(lca);
+        
+        if (lca && lca.el) {
+          d3.select(lca.el)
+            .attr("fill", "purple")
+            .attr("stroke", "darkviolet")
+            .attr("stroke-width", 4);
+        }
+      }
+    } else if (selectedNodes.includes(actualNode)) {
+      const newSelected = selectedNodes.filter(n => n !== actualNode);
+      setSelectedNodes(newSelected);
+      
+      if (actualNode.el) {
+        d3.select(actualNode.el)
+          .attr("fill", "white")
+          .attr("stroke", "black")
+          .attr("stroke-width", 1.5);
+      }
+      
+      if (newSelected.length < 2) {
+        setLcaResult(null);
+        resetColors(rootNode!);
+        newSelected.forEach(n => {
+          if (n.el) {
+            d3.select(n.el)
+              .attr("fill", "yellow")
+              .attr("stroke", "orange")
+              .attr("stroke-width", 3);
+          }
+        });
+      }
+    }
+  };
+
+  const resetLCA = () => {
+    if (rootNode) {
+      resetColors(rootNode);
+    }
+    setSelectedNodes([]);
+    setLcaResult(null);
   };
 
   const handleRun = async () => {
@@ -93,13 +196,11 @@ async function handleParse() {
 
     const onVisit = (node: Node) => {
       count++;
-      logs.push(`Visited: <${node.tag}>`);
       highlight(node);
       highlightEdge(node);
     };
 
     const onMatch = (node: Node) => {
-      logs.push(`Match: <${node.tag}>`);
       if (matchMode === "all" || (matchMode === "topn" && matchCount < topN)) {
         markMatch(node);
         matchCount++;
@@ -107,15 +208,14 @@ async function handleParse() {
     };
 
     if (mode === "dfs") {
-      await traversal.dfsAnimated(rootNode, query, 150, onVisit, onMatch);
+      await traversalRef.current.dfsAnimated(rootNode, query, 150, onVisit, onMatch);
     } else if (mode === "bfs") {
-      await traversal.bfsAnimated(rootNode, query, 150, onVisit, onMatch);
+      await traversalRef.current.bfsAnimated(rootNode, query, 150, onVisit, onMatch);
     } else {
-      await traversal.dlsAnimated(rootNode, query, topN, 0, 0, 150, onVisit, onMatch);
+      await traversalRef.current.dlsAnimated(rootNode, query, topN, 0, 0, 150, onVisit, onMatch);
     }
 
     const end = performance.now();
-
     setVisitedCount(count);
     setLog(logs);
     setTime(end - start);
@@ -210,8 +310,57 @@ async function handleParse() {
         </span>
 
         <button onClick={handleRun}>Run</button>
-      </div>
+  
+        <button  onClick={() => {
+              if (lcaMode) {
+                resetLCA();
+                setLcaMode(false);
+              } else {
+                setLcaMode(true);
+                resetLCA();
+                alert("LCA Mode: Click on two nodes to find their Lowest Common Ancestor");
+              }
+            }}
+            style={{ 
+              backgroundColor: lcaMode ? "#908989" : "#fafafa", 
+              color: "black",
+            }}
+          >
+            {lcaMode ? "Exit LCA Mode" : "Find LCA"}
+          </button>
+        </div>
+  
 
+      {lcaMode && (
+        <div style={{ 
+          textAlign: "center", 
+          padding: "10px", 
+          backgroundColor: "#e3f2fd", 
+          borderRadius: "4px",
+          marginBottom: "10px"
+        }}>
+          <strong>LCA Mode Active:</strong> 
+          {selectedNodes.length === 0 && " Select first node"}
+          {selectedNodes.length === 1 && ` Selected: ${selectedNodes[0].tag} - Select second node`}
+          {selectedNodes.length === 2 && (
+            <>
+              <div>Selected: {selectedNodes[0].tag} and {selectedNodes[1].tag}</div>
+              {lcaResult && (
+                <div style={{ marginTop: "5px", color: "#9c27b0", fontWeight: "bold" }}>
+                  Lowest Common Ancestor: {lcaResult.tag} 
+                  (Depth: {traversalRef.getNodeDepth(lcaResult)})
+                </div>
+              )}
+            </>
+          )}
+          <button 
+            onClick={resetLCA}
+            style={{ marginLeft: "10px", padding: "2px 10px", cursor: "pointer" }}
+          >
+            Reset Selection
+          </button>
+        </div>
+      )}
 
       {rootNode && (
         <>
@@ -228,7 +377,10 @@ async function handleParse() {
               background: "#fafafa"
             }}
           >
-            <TreeView root={rootNode} />
+            <TreeView 
+              root={rootNode} 
+              onNodeClick={lcaMode ? handleNodeClick : undefined}
+              lcaMode={lcaMode} />
           </div>
         </>
       )}

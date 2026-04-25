@@ -2,7 +2,11 @@ import * as d3 from "d3";
 import { useEffect, useRef } from "react";
 import { Node } from "../../backend/src/core/entities/Tree";
 
-export function TreeView({ root }: { root: Node }) {
+export function TreeView({ root, onNodeClick, lcaMode }: { 
+  root: Node; 
+  onNodeClick?: (node: Node) => void;
+  lcaMode?: boolean;
+}) {
   const ref = useRef<SVGSVGElement>(null);
 
   useEffect(() => {
@@ -67,8 +71,16 @@ export function TreeView({ root }: { root: Node }) {
       .attr("fill", "white")
       .attr("stroke", "black")
       .attr("stroke-width", 1.5)
+      .attr("cursor", lcaMode ? "pointer" : "default")
+      .on("click", (event, d) => {
+          event.stopPropagation();
+          if (onNodeClick) {
+            onNodeClick(d.data);
+          }
+      })
       .each(function (d) {
         d.data.el = this as SVGCircleElement;
+        
       });
 
     // truncate long text
@@ -91,6 +103,7 @@ export function TreeView({ root }: { root: Node }) {
       .attr("font-size", 11)
       .attr("font-family", "Arial, sans-serif")
       .attr("text-anchor", "middle")
+      .attr("cursor", lcaMode ? "pointer" : "default")
 
     textElements.each(function(d) {
       const bbox = this.getBBox();
@@ -106,9 +119,11 @@ export function TreeView({ root }: { root: Node }) {
         .attr("stroke", "#ccc")
         .attr("stroke-width", 0.5)
         .attr("data-for-node", d.data.id);
+        
     });
 
-  }, [root]);
+
+  }, [root,onNodeClick, lcaMode]);
 
   return (
     <svg 

@@ -37,7 +37,7 @@ serve({
       try {
         const { html } = await req.json();
         const tree = parser.loadFromString(html);
-         const maxDepth = tree.maxDepth;
+        const maxDepth = tree.maxDepth;
         const visual = toVisualNode(tree.root);
        
 
@@ -60,6 +60,7 @@ serve({
             const { url: targetUrl } = await req.json();
 
             const tree = await parser.loadFromUrl(targetUrl);
+            const maxDepth = tree.maxDepth;
             const visual = toVisualNode(tree.root);
            
 
