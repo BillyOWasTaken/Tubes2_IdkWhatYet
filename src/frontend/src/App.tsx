@@ -348,7 +348,7 @@ export default function App() {
               {lcaResult && (
                 <div style={{ marginTop: "5px", color: "#9c27b0", fontWeight: "bold" }}>
                   Lowest Common Ancestor: {lcaResult.tag} 
-                  (Depth: {traversalRef.getNodeDepth(lcaResult)})
+                  (Depth: {traversalRef.current.getNodeDepth(lcaResult)})
                 </div>
               )}
             </>
